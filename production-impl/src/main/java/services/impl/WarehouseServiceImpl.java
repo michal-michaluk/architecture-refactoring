@@ -3,15 +3,12 @@ package services.impl;
 import api.DeliveryNote;
 import api.StorageUnit;
 import api.WarehouseService;
-import dao.DemandDao;
-import dao.ProductionDao;
 import dao.ShortageDao;
 import entities.ShortageEntity;
 import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
 import external.StockService;
-import tools.ShortageFinder;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -21,9 +18,8 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     //Inject all
     private ShortageDao shortageDao;
-    private ProductionDao productionDao;
     private StockService stockService;
-    private DemandDao demandDao;
+    private ShortageFinder shortageFinder;
 
     private NotificationsService notificationService;
     private JiraService jiraService;
@@ -66,11 +62,10 @@ public class WarehouseServiceImpl implements WarehouseService {
     public void processShortages(String productRefNo) {
         LocalDate today = LocalDate.now(clock);
         CurrentStock currentStock = stockService.getCurrentStock(productRefNo);
-        List<ShortageEntity> shortages = ShortageFinder.findShortages(
+        List<ShortageEntity> shortages = shortageFinder.findShortages(
+                productRefNo,
                 today, confShortagePredictionDaysAhead,
-                currentStock,
-                productionDao.findFromTime(productRefNo, today.atStartOfDay()),
-                demandDao.findFrom(today.atStartOfDay(), productRefNo)
+                currentStock
         );
 
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);

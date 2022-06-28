@@ -1,10 +1,13 @@
-package tools;
+package services.impl;
 
+import dao.DemandDao;
+import dao.ProductionDao;
 import entities.*;
 import enums.DeliverySchema;
 import external.CurrentStock;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,17 +21,20 @@ import static java.util.Arrays.asList;
 
 public class ShortageFinderTest {
 
+    private final String productRefNo = "300900";
     AtomicLong ids = new AtomicLong(0);
     private LocalDate date = LocalDate.now();
 
+    private final DemandDao demands = Mockito.mock(DemandDao.class);
+    private final ProductionDao productions = Mockito.mock(ProductionDao.class);
+    private final ShortageFinder subject = new ShortageFinder(demands, productions);
+
     @Test
     public void findShortages() {
-        CurrentStock stock = new CurrentStock(1000, 200);
-        print(stock);
-        List<ShortageEntity> shortages = ShortageFinder.findShortages(
-                date.plusDays(1), 7,
-                stock,
-                productions(
+        Mockito.when(demands.findFrom(Mockito.any(), Mockito.eq(productRefNo)))
+                .thenReturn(demands(demand(2, 17000), demand(3, 17000)));
+        Mockito.when(productions.findFromTime(Mockito.eq(productRefNo), Mockito.any()))
+                .thenReturn(productions(
                         prod(0, 1, 7), prod(0, 1, 14),
                         prod(0, 2, 7), prod(0, 2, 14),
                         prod(0, 3, 7), prod(0, 3, 14),
@@ -36,8 +42,14 @@ public class ShortageFinderTest {
                         prod(0, 5, 7), prod(0, 5, 14),
                         prod(0, 6, 7), prod(0, 6, 14),
                         prod(0, 7, 7), prod(0, 7, 14)
-                ),
-                demands(demand(2, 17000), demand(3, 17000))
+                ));
+
+        CurrentStock stock = new CurrentStock(1000, 200);
+        print(stock);
+        List<ShortageEntity> shortages = subject.findShortages(
+                productRefNo,
+                date.plusDays(1), 7,
+                stock
         );
         print(shortages);
         Assert.assertEquals(2, shortages.size());
@@ -119,7 +131,7 @@ public class ShortageFinderTest {
 
     private FormEntity createForm300900() {
         FormEntity form = new FormEntity();
-        form.setRefNo("300900");
+        form.setRefNo(productRefNo);
         form.setOutputPerMinute(30);
         form.setUtilization(2.0);
         form.setWeight(5_000);

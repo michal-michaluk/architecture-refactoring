@@ -2,7 +2,10 @@ package services.impl;
 
 import api.PlanViewDto;
 import api.PlannerService;
-import dao.*;
+import dao.FormDao;
+import dao.LineDao;
+import dao.ProductionDao;
+import dao.ShortageDao;
 import entities.FormEntity;
 import entities.LineEntity;
 import entities.ProductionEntity;
@@ -11,7 +14,6 @@ import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
 import external.StockService;
-import tools.ShortageFinder;
 import tools.Util;
 
 import java.time.Clock;
@@ -29,7 +31,8 @@ public class PlannerServiceImpl implements PlannerService {
     private FormDao formDao;
     private ShortageDao shortageDao;
     private StockService stockService;
-    private DemandDao demandDao;
+    private ShortageFinder shortageFinder;
+
 
     private NotificationsService notificationService;
     private JiraService jiraService;
@@ -239,11 +242,10 @@ public class PlannerServiceImpl implements PlannerService {
 
         for (ProductionEntity production : products) {
             CurrentStock currentStock = stockService.getCurrentStock(production.getForm().getRefNo());
-            List<ShortageEntity> shortages = ShortageFinder.findShortages(
+            List<ShortageEntity> shortages = shortageFinder.findShortages(
+                    production.getForm().getRefNo(),
                     today, confShortagePredictionDaysAhead,
-                    currentStock,
-                    productionDao.findFromTime(production.getForm().getRefNo(), today.atStartOfDay()),
-                    demandDao.findFrom(today.atStartOfDay(), production.getForm().getRefNo())
+                    currentStock
             );
             List<ShortageEntity> previous = shortageDao.getForProduct(production.getForm().getRefNo());
             if (!shortages.isEmpty() && !shortages.equals(previous)) {

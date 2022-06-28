@@ -1,23 +1,26 @@
-package tools;
+package services.impl;
 
+import dao.DemandDao;
+import dao.ProductionDao;
 import entities.DemandEntity;
 import entities.ProductionEntity;
 import entities.ShortageEntity;
 import enums.DeliverySchema;
 import external.CurrentStock;
+import tools.Util;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 public class ShortageFinder {
 
-    private ShortageFinder() {
+    private final DemandDao demandDao;
+    private final ProductionDao productionDao;
+
+    public ShortageFinder(DemandDao demandDao, ProductionDao productionDao) {
+        this.demandDao = demandDao;
+        this.productionDao = productionDao;
     }
 
     /**
@@ -34,29 +37,28 @@ public class ShortageFinder {
      * Schema changes the way how we calculate shortages.
      * Pick of schema depends on customer demand on daily basis and for each product differently.
      * Some customers includes that information in callof document,
-     * other stick to single schema per product. By manual adjustments of demand,
+     * other stick to single schema per product. By manual adjustments of demand,
      * customer always specifies desired delivery schema
      * (increase amount in scheduled transport or organize extra transport at given time)
      */
-    public static List<ShortageEntity> findShortages(LocalDate today, int daysAhead, CurrentStock stock,
-                                                     List<ProductionEntity> productions, List<DemandEntity> demands) {
+    public List<ShortageEntity> findShortages(String productRefNo, LocalDate today, int daysAhead, CurrentStock stock) {
+        List<ProductionEntity> productions = productionDao.findFromTime(productRefNo, today.atStartOfDay());
+        List<DemandEntity> demands = demandDao.findFrom(today.atStartOfDay(), productRefNo);
 
         List<LocalDate> dates = Stream.iterate(today, date -> date.plusDays(1))
                 .limit(daysAhead)
-                .collect(toList());
+                .toList();
 
-        String productRefNo = null;
-        HashMap<LocalDate, List<ProductionEntity>> outputs = new HashMap<>();
+        Map<LocalDate, List<ProductionEntity>> outputs = new HashMap<>();
         for (ProductionEntity production : productions) {
             if (!outputs.containsKey(production.getStart().toLocalDate())) {
                 outputs.put(production.getStart().toLocalDate(), new ArrayList<>());
             }
             outputs.get(production.getStart().toLocalDate()).add(production);
-            productRefNo = production.getForm().getRefNo();
         }
-        HashMap<LocalDate, DemandEntity> demandsPerDay = new HashMap<>();
-        for (DemandEntity demand1 : demands) {
-            demandsPerDay.put(demand1.getDay(), demand1);
+        Map<LocalDate, DemandEntity> demandsPerDay = new HashMap<>();
+        for (DemandEntity demand : demands) {
+            demandsPerDay.put(demand.getDay(), demand);
         }
 
         long level = stock.getLevel();

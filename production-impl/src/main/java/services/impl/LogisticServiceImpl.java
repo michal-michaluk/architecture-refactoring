@@ -4,7 +4,6 @@ import api.AdjustDemandDto;
 import api.LogisticService;
 import api.StockForecastDto;
 import dao.DemandDao;
-import dao.ProductionDao;
 import dao.ShortageDao;
 import entities.DemandEntity;
 import entities.ManualAdjustmentEntity;
@@ -13,7 +12,6 @@ import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
 import external.StockService;
-import tools.ShortageFinder;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -26,7 +24,7 @@ public class LogisticServiceImpl implements LogisticService {
     private DemandDao demandDao;
     private ShortageDao shortageDao;
     private StockService stockService;
-    private ProductionDao productionDao;
+    private ShortageFinder shortageFinder;
 
     private NotificationsService notificationService;
     private JiraService jiraService;
@@ -75,11 +73,10 @@ public class LogisticServiceImpl implements LogisticService {
         String productRefNo = adjustment.getProductRefNo();
         LocalDate today = LocalDate.now(clock);
         CurrentStock stock = stockService.getCurrentStock(productRefNo);
-        List<ShortageEntity> shortages = ShortageFinder.findShortages(
+        List<ShortageEntity> shortages = shortageFinder.findShortages(
+                productRefNo,
                 today, confShortagePredictionDaysAhead,
-                stock,
-                productionDao.findFromTime(productRefNo, today.atStartOfDay()),
-                demandDao.findFrom(today.atStartOfDay(), productRefNo)
+                stock
         );
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
         // TODO REFACTOR: lookup for shortages -> ShortageFound / ShortagesGone
