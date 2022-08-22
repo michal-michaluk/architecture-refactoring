@@ -7,10 +7,14 @@ import entities.ProductionEntity;
 import entities.ShortageEntity;
 import enums.DeliverySchema;
 import external.CurrentStock;
+import shortages.ProducitonOutputs;
 import tools.Util;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class ShortageFinder {
@@ -42,20 +46,15 @@ public class ShortageFinder {
      * (increase amount in scheduled transport or organize extra transport at given time)
      */
     public List<ShortageEntity> findShortages(String productRefNo, LocalDate today, int daysAhead, CurrentStock stock) {
-        List<ProductionEntity> productions = productionDao.findFromTime(productRefNo, today.atStartOfDay());
         List<DemandEntity> demands = demandDao.findFrom(today.atStartOfDay(), productRefNo);
 
         List<LocalDate> dates = Stream.iterate(today, date -> date.plusDays(1))
                 .limit(daysAhead)
                 .toList();
 
-        Map<LocalDate, List<ProductionEntity>> outputs = new HashMap<>();
-        for (ProductionEntity production : productions) {
-            if (!outputs.containsKey(production.getStart().toLocalDate())) {
-                outputs.put(production.getStart().toLocalDate(), new ArrayList<>());
-            }
-            outputs.get(production.getStart().toLocalDate()).add(production);
-        }
+        List<ProductionEntity> productions = productionDao.findFromTime(productRefNo, today.atStartOfDay());
+        ProducitonOutputs outputs = new ProducitonOutputs(productions);
+
         Map<LocalDate, DemandEntity> demandsPerDay = new HashMap<>();
         for (DemandEntity demand : demands) {
             demandsPerDay.put(demand.getDay(), demand);
@@ -67,15 +66,10 @@ public class ShortageFinder {
         for (LocalDate day : dates) {
             DemandEntity demand = demandsPerDay.get(day);
             if (demand == null) {
-                for (ProductionEntity production : outputs.get(day)) {
-                    level += production.getOutput();
-                }
+                level += outputs.getOutputs(day);
                 continue;
             }
-            long produced = 0;
-            for (ProductionEntity production : outputs.get(day)) {
-                produced += production.getOutput();
-            }
+            long produced = outputs.getOutputs(day);
 
             long levelOnDelivery;
             if (Util.getDeliverySchema(demand) == DeliverySchema.atDayStart) {
