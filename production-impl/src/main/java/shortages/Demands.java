@@ -24,19 +24,42 @@ public class Demands {
         return demands.containsKey(day);
     }
 
-    public long getLevel(LocalDate day) {
+    public DailyDemand getDemand(LocalDate day) {
         if (hasDemandsFor(day)) {
-            return Util.getLevel(demands.get(day));
-        } else {
-            return 0;
+            return new DailyDemand(demands.get(day));
         }
+        return null;
     }
 
-    public boolean hasDeliverySchema(LocalDate day, DeliverySchema schema) {
-        if (hasDemandsFor(day)) {
-            return Util.getDeliverySchema(demands.get(day)) == schema;
-        } else {
-            return false;
+    public static class DailyDemand {
+        private final DemandEntity demand;
+
+        public DailyDemand(DemandEntity demand) {
+            this.demand = demand;
+        }
+
+        public long calculateLevelOnDelivery(long level, long produced) {
+            long levelOnDelivery;
+            if (hasDeliverySchema(DeliverySchema.atDayStart)) {
+                levelOnDelivery = level - getLevel();
+            } else if (hasDeliverySchema(DeliverySchema.tillEndOfDay)) {
+                levelOnDelivery = level - getLevel() + produced;
+            } else if (hasDeliverySchema(DeliverySchema.every3hours)) {
+                // TODO WTF ?? we need to rewrite that app :/
+                throw new UnsupportedOperationException();
+            } else {
+                // TODO implement other variants
+                throw new UnsupportedOperationException();
+            }
+            return levelOnDelivery;
+        }
+
+        public long getLevel() {
+            return Util.getLevel(demand);
+        }
+
+        private boolean hasDeliverySchema(DeliverySchema schema) {
+            return Util.getDeliverySchema(demand) == schema;
         }
     }
 }
