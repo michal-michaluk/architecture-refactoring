@@ -7,14 +7,13 @@ import entities.ProductionEntity;
 import entities.ShortageEntity;
 import enums.DeliverySchema;
 import external.CurrentStock;
+import shortages.Demands;
 import shortages.ProducitonOutputs;
 import tools.Util;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 public class ShortageFinder {
@@ -55,28 +54,24 @@ public class ShortageFinder {
         List<ProductionEntity> productions = productionDao.findFromTime(productRefNo, today.atStartOfDay());
         ProducitonOutputs outputs = new ProducitonOutputs(productions);
 
-        Map<LocalDate, DemandEntity> demandsPerDay = new HashMap<>();
-        for (DemandEntity demand : demands) {
-            demandsPerDay.put(demand.getDay(), demand);
-        }
+        Demands demandsPerDay = new Demands(demands);
 
         long level = stock.getLevel();
 
         List<ShortageEntity> gap = new LinkedList<>();
         for (LocalDate day : dates) {
-            DemandEntity demand = demandsPerDay.get(day);
-            if (demand == null) {
+            if (!demandsPerDay.hasDemandsFor(day)) {
                 level += outputs.getOutputs(day);
                 continue;
             }
             long produced = outputs.getOutputs(day);
 
             long levelOnDelivery;
-            if (Util.getDeliverySchema(demand) == DeliverySchema.atDayStart) {
-                levelOnDelivery = level - Util.getLevel(demand);
-            } else if (Util.getDeliverySchema(demand) == DeliverySchema.tillEndOfDay) {
-                levelOnDelivery = level - Util.getLevel(demand) + produced;
-            } else if (Util.getDeliverySchema(demand) == DeliverySchema.every3hours) {
+            if (demandsPerDay.hasDeliverySchema(day, DeliverySchema.atDayStart)) {
+                levelOnDelivery = level - demandsPerDay.getLevel(day);
+            } else if (demandsPerDay.hasDeliverySchema(day, DeliverySchema.tillEndOfDay)) {
+                levelOnDelivery = level - demandsPerDay.getLevel(day) + produced;
+            } else if (demandsPerDay.hasDeliverySchema(day, DeliverySchema.every3hours)) {
                 // TODO WTF ?? we need to rewrite that app :/
                 throw new UnsupportedOperationException();
             } else {
