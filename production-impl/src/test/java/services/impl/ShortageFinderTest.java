@@ -5,6 +5,7 @@ import dao.ProductionDao;
 import entities.*;
 import enums.DeliverySchema;
 import external.CurrentStock;
+import infrastructure.DemandsAdapter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -27,7 +28,7 @@ public class ShortageFinderTest {
 
     private final DemandDao demands = Mockito.mock(DemandDao.class);
     private final ProductionDao productions = Mockito.mock(ProductionDao.class);
-    private final ShortageFinder subject = new ShortageFinder(demands, productions);
+    private final ShortageFinder subject = new ShortageFinder(new DemandsAdapter(demands), productions);
 
     @Test
     public void findShortages() {

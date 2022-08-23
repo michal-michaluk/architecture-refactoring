@@ -1,23 +1,15 @@
 package shortages;
 
-import entities.DemandEntity;
 import enums.DeliverySchema;
-import tools.Util;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Demands {
-    private final Map<LocalDate, DemandEntity> demands;
+    private final Map<LocalDate, DailyDemand> demands;
 
-    public Demands(List<DemandEntity> demands) {
-        Map<LocalDate, DemandEntity> demandsPerDay = new HashMap<>();
-        for (DemandEntity demand : demands) {
-            demandsPerDay.put(demand.getDay(), demand);
-        }
-        this.demands = demandsPerDay;
+    public Demands(Map<LocalDate, DailyDemand> demands) {
+        this.demands = demands;
     }
 
     public boolean hasDemandsFor(LocalDate day) {
@@ -26,16 +18,18 @@ public class Demands {
 
     public DailyDemand getDemand(LocalDate day) {
         if (hasDemandsFor(day)) {
-            return new DailyDemand(demands.get(day));
+            return demands.get(day);
         }
         return null;
     }
 
     public static class DailyDemand {
-        private final DemandEntity demand;
+        private final long level;
+        private final DeliverySchema schema;
 
-        public DailyDemand(DemandEntity demand) {
-            this.demand = demand;
+        public DailyDemand(long level, DeliverySchema schema) {
+            this.level = level;
+            this.schema = schema;
         }
 
         public long calculateLevelOnDelivery(long level, long produced) {
@@ -55,11 +49,11 @@ public class Demands {
         }
 
         public long getLevel() {
-            return Util.getLevel(demand);
+            return level;
         }
 
         private boolean hasDeliverySchema(DeliverySchema schema) {
-            return Util.getDeliverySchema(demand) == schema;
+            return this.schema == schema;
         }
     }
 }
