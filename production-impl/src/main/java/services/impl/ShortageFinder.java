@@ -1,11 +1,11 @@
 package services.impl;
 
-import dao.ProductionDao;
 import entities.ShortageEntity;
 import external.CurrentStock;
 import shortages.DemandPort;
 import shortages.Demands;
-import shortages.ProducitonOutputs;
+import shortages.ProductionOutputs;
+import shortages.ProductionPort;
 
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -15,11 +15,11 @@ import java.util.stream.Stream;
 public class ShortageFinder {
 
     private final DemandPort demandsPort;
-    private final ProductionDao productionDao;
+    private final ProductionPort productionPort;
 
-    public ShortageFinder(DemandPort demandPort, ProductionDao productionDao) {
+    public ShortageFinder(DemandPort demandPort, ProductionPort productionPort) {
         this.demandsPort = demandPort;
-        this.productionDao = productionDao;
+        this.productionPort = productionPort;
     }
 
     /**
@@ -46,8 +46,7 @@ public class ShortageFinder {
                 .limit(daysAhead)
                 .toList();
 
-        ProducitonOutputs outputs = new ProducitonOutputs(productionDao.findFromTime(productRefNo, today.atStartOfDay()));
-
+        ProductionOutputs outputs = productionPort.get(productRefNo, today.atStartOfDay());
         Demands demandsPerDay = demandsPort.get(productRefNo, today);
 
         long level = stock.getLevel();
