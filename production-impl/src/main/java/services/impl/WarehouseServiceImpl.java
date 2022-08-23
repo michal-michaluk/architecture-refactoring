@@ -5,10 +5,10 @@ import api.StorageUnit;
 import api.WarehouseService;
 import dao.ShortageDao;
 import entities.ShortageEntity;
-import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
-import external.StockService;
+import shortages.WarehouseStock;
+import warehouse.StockPort;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -18,7 +18,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     //Inject all
     private ShortageDao shortageDao;
-    private StockService stockService;
+    private StockPort stockPort;
     private ShortageFinder shortageFinder;
 
     private NotificationsService notificationService;
@@ -61,7 +61,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     public void processShortages(String productRefNo) {
         LocalDate today = LocalDate.now(clock);
-        CurrentStock currentStock = stockService.getCurrentStock(productRefNo);
+        WarehouseStock currentStock = stockPort.getStock(productRefNo);
         List<ShortageEntity> shortages = shortageFinder.findShortages(
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
@@ -71,7 +71,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
         if (shortages != null && !shortages.equals(previous)) {
             notificationService.alertPlanner(shortages);
-            if (currentStock.getLocked() > 0 &&
+            if (currentStock.locked() > 0 &&
                     shortages.get(0).getAtDay()
                             .isBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
                 jiraService.increasePriorityFor(productRefNo);

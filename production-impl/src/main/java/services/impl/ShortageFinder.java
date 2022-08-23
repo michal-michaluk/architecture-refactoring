@@ -1,11 +1,7 @@
 package services.impl;
 
 import entities.ShortageEntity;
-import external.CurrentStock;
-import shortages.DemandPort;
-import shortages.Demands;
-import shortages.ProductionOutputs;
-import shortages.ProductionPort;
+import shortages.*;
 
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -40,8 +36,7 @@ public class ShortageFinder {
      * customer always specifies desired delivery schema
      * (increase amount in scheduled transport or organize extra transport at given time)
      */
-    public List<ShortageEntity> findShortages(String productRefNo, LocalDate today, int daysAhead, CurrentStock stock) {
-
+    public List<ShortageEntity> findShortages(String productRefNo, LocalDate today, int daysAhead, WarehouseStock stock) {
         List<LocalDate> dates = Stream.iterate(today, date -> date.plusDays(1))
                 .limit(daysAhead)
                 .toList();
@@ -49,7 +44,7 @@ public class ShortageFinder {
         ProductionOutputs outputs = productionPort.get(productRefNo, today.atStartOfDay());
         Demands demandsPerDay = demandsPort.get(productRefNo, today);
 
-        long level = stock.getLevel();
+        long level = stock.level();
 
         List<ShortageEntity> gap = new LinkedList<>();
         for (LocalDate day : dates) {

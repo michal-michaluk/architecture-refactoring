@@ -8,10 +8,10 @@ import dao.ShortageDao;
 import entities.DemandEntity;
 import entities.ManualAdjustmentEntity;
 import entities.ShortageEntity;
-import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
-import external.StockService;
+import shortages.WarehouseStock;
+import warehouse.StockPort;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -23,7 +23,7 @@ public class LogisticServiceImpl implements LogisticService {
     //Inject all
     private DemandDao demandDao;
     private ShortageDao shortageDao;
-    private StockService stockService;
+    private StockPort stockPort;
     private ShortageFinder shortageFinder;
 
     private NotificationsService notificationService;
@@ -72,7 +72,8 @@ public class LogisticServiceImpl implements LogisticService {
 
         String productRefNo = adjustment.getProductRefNo();
         LocalDate today = LocalDate.now(clock);
-        CurrentStock stock = stockService.getCurrentStock(productRefNo);
+        WarehouseStock stock = stockPort.getStock(productRefNo);
+
         List<ShortageEntity> shortages = shortageFinder.findShortages(
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
@@ -83,7 +84,7 @@ public class LogisticServiceImpl implements LogisticService {
         if (!shortages.isEmpty() && !shortages.equals(previous)) {
             notificationService.alertPlanner(shortages);
             // TODO REFACTOR: policy why to increase task priority
-            if (stock.getLocked() > 0 &&
+            if (stock.locked() > 0 &&
                     shortages.get(0).getAtDay()
                             .isBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
                 jiraService.increasePriorityFor(productRefNo);

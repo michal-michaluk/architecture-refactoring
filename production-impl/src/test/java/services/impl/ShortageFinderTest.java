@@ -4,12 +4,12 @@ import dao.DemandDao;
 import dao.ProductionDao;
 import entities.*;
 import enums.DeliverySchema;
-import external.CurrentStock;
 import infrastructure.DemandsAdapter;
 import infrastructure.ProductionAdapter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+import shortages.WarehouseStock;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -49,7 +49,7 @@ public class ShortageFinderTest {
                         prod(0, 7, 7), prod(0, 7, 14)
                 ));
 
-        CurrentStock stock = new CurrentStock(1000, 200);
+        WarehouseStock stock = new WarehouseStock(1000, 200);
         print(stock);
         List<ShortageEntity> shortages = subject.findShortages(
                 productRefNo,
@@ -64,8 +64,8 @@ public class ShortageFinderTest {
         Assert.assertEquals(7800, shortages.get(1).getMissing());
     }
 
-    private void print(CurrentStock stock) {
-        System.out.println("shortages: " + stock.getLevel());
+    private void print(WarehouseStock stock) {
+        System.out.println("shortages: " + stock.level());
     }
 
     private void print(List<ShortageEntity> shortages) {

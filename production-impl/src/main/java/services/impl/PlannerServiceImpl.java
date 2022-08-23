@@ -10,11 +10,11 @@ import entities.FormEntity;
 import entities.LineEntity;
 import entities.ProductionEntity;
 import entities.ShortageEntity;
-import external.CurrentStock;
 import external.JiraService;
 import external.NotificationsService;
-import external.StockService;
+import shortages.WarehouseStock;
 import tools.Util;
+import warehouse.StockPort;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -30,7 +30,7 @@ public class PlannerServiceImpl implements PlannerService {
     private LineDao lineDao;
     private FormDao formDao;
     private ShortageDao shortageDao;
-    private StockService stockService;
+    private StockPort stockPort;
     private ShortageFinder shortageFinder;
 
 
@@ -241,7 +241,7 @@ public class PlannerServiceImpl implements PlannerService {
         LocalDate today = LocalDate.now(clock);
 
         for (ProductionEntity production : products) {
-            CurrentStock currentStock = stockService.getCurrentStock(production.getForm().getRefNo());
+            WarehouseStock currentStock = stockPort.getStock(production.getForm().getRefNo());
             List<ShortageEntity> shortages = shortageFinder.findShortages(
                     production.getForm().getRefNo(),
                     today, confShortagePredictionDaysAhead,
@@ -250,7 +250,7 @@ public class PlannerServiceImpl implements PlannerService {
             List<ShortageEntity> previous = shortageDao.getForProduct(production.getForm().getRefNo());
             if (!shortages.isEmpty() && !shortages.equals(previous)) {
                 notificationService.markOnPlan(shortages);
-                if (currentStock.getLocked() > 0 &&
+                if (currentStock.locked() > 0 &&
                         shortages.get(0).getAtDay()
                                 .isBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
                     jiraService.increasePriorityFor(production.getForm().getRefNo());
