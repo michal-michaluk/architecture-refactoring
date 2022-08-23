@@ -3,7 +3,7 @@ package services.impl;
 import dao.ProductionDao;
 import entities.ShortageEntity;
 import external.CurrentStock;
-import shortages.DemandRepository;
+import shortages.DemandPort;
 import shortages.Demands;
 import shortages.ProducitonOutputs;
 
@@ -14,11 +14,11 @@ import java.util.stream.Stream;
 
 public class ShortageFinder {
 
-    private final DemandRepository demandRepository;
+    private final DemandPort demandsPort;
     private final ProductionDao productionDao;
 
-    public ShortageFinder(DemandRepository demandRepository, ProductionDao productionDao) {
-        this.demandRepository = demandRepository;
+    public ShortageFinder(DemandPort demandPort, ProductionDao productionDao) {
+        this.demandsPort = demandPort;
         this.productionDao = productionDao;
     }
 
@@ -48,7 +48,7 @@ public class ShortageFinder {
 
         ProducitonOutputs outputs = new ProducitonOutputs(productionDao.findFromTime(productRefNo, today.atStartOfDay()));
 
-        Demands demandsPerDay = demandRepository.get(productRefNo, today);
+        Demands demandsPerDay = demandsPort.get(productRefNo, today);
 
         long level = stock.getLevel();
 
