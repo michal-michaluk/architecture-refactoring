@@ -1,12 +1,8 @@
 package services.impl;
 
-import entities.ShortageEntity;
 import shortages.*;
 
 import java.time.LocalDate;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Stream;
 
 public class ShortageFinder {
 
@@ -35,18 +31,16 @@ public class ShortageFinder {
      * other stick to single schema per product. By manual adjustments of demand,
      * customer always specifies desired delivery schema
      * (increase amount in scheduled transport or organize extra transport at given time)
+     * @return
      */
-    public List<ShortageEntity> findShortages(String productRefNo, LocalDate today, int daysAhead, WarehouseStock stock) {
-        List<LocalDate> dates = Stream.iterate(today, date -> date.plusDays(1))
-                .limit(daysAhead)
-                .toList();
-
+    public Shortage findShortages(String productRefNo, LocalDate today, int daysAhead, WarehouseStock stock) {
+        DateRange dates = DateRange.of(today, daysAhead);
         ProductionOutputs outputs = productionPort.get(productRefNo, today.atStartOfDay());
         Demands demandsPerDay = demandsPort.get(productRefNo, today);
 
         long level = stock.level();
 
-        List<ShortageEntity> gap = new LinkedList<>();
+        Shortage shortage = Shortage.empty(productRefNo);
         for (LocalDate day : dates) {
             if (!demandsPerDay.hasDemandsFor(day)) {
                 level += outputs.getOutputs(day);
@@ -58,16 +52,11 @@ public class ShortageFinder {
             long levelOnDelivery = demand.calculateLevelOnDelivery(level, produced);
 
             if (levelOnDelivery < 0) {
-                ShortageEntity entity = new ShortageEntity();
-                entity.setRefNo(productRefNo);
-                entity.setFound(LocalDate.now());
-                entity.setAtDay(day);
-                entity.setMissing(-levelOnDelivery);
-                gap.add(entity);
+                shortage.add(day, levelOnDelivery);
             }
             long endOfDayLevel = level + produced - demand.getLevel();
             level = endOfDayLevel >= 0 ? endOfDayLevel : 0;
         }
-        return gap;
+        return shortage;
     }
 }

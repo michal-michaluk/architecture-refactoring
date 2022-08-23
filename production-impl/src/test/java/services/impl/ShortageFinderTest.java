@@ -55,7 +55,7 @@ public class ShortageFinderTest {
                 productRefNo,
                 date.plusDays(1), 7,
                 stock
-        );
+        ).getShortages();
         print(shortages);
         Assert.assertEquals(2, shortages.size());
         Assert.assertEquals(date.plusDays(2), shortages.get(0).getAtDay());

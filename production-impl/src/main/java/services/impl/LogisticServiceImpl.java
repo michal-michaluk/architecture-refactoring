@@ -4,29 +4,27 @@ import api.AdjustDemandDto;
 import api.LogisticService;
 import api.StockForecastDto;
 import dao.DemandDao;
-import dao.ShortageDao;
 import entities.DemandEntity;
 import entities.ManualAdjustmentEntity;
-import entities.ShortageEntity;
 import external.JiraService;
-import external.NotificationsService;
+import shortages.Shortage;
+import shortages.ShortagePort;
 import shortages.WarehouseStock;
 import warehouse.StockPort;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.LinkedList;
-import java.util.List;
 
 public class LogisticServiceImpl implements LogisticService {
 
     //Inject all
     private DemandDao demandDao;
-    private ShortageDao shortageDao;
+    private ShortagePort shortagePort;
     private StockPort stockPort;
     private ShortageFinder shortageFinder;
 
-    private NotificationsService notificationService;
+    private NotificationPort notificationPort;
     private JiraService jiraService;
     private Clock clock;
 
@@ -74,25 +72,24 @@ public class LogisticServiceImpl implements LogisticService {
         LocalDate today = LocalDate.now(clock);
         WarehouseStock stock = stockPort.getStock(productRefNo);
 
-        List<ShortageEntity> shortages = shortageFinder.findShortages(
+        Shortage shortages = shortageFinder.findShortages(
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
                 stock
         );
-        List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
+        Shortage previous = shortagePort.get(productRefNo);
         // TODO REFACTOR: lookup for shortages -> ShortageFound / ShortagesGone
-        if (!shortages.isEmpty() && !shortages.equals(previous)) {
-            notificationService.alertPlanner(shortages);
+        if (shortages.isDifferentThan(previous)) {
+            notificationPort.alertPlanner(shortages);
             // TODO REFACTOR: policy why to increase task priority
             if (stock.locked() > 0 &&
-                    shortages.get(0).getAtDay()
-                            .isBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
+                    shortages.firstBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
                 jiraService.increasePriorityFor(productRefNo);
             }
-            shortageDao.save(shortages);
+            shortagePort.save(shortages);
         }
         if (shortages.isEmpty() && !previous.isEmpty()) {
-            shortageDao.delete(productRefNo);
+            shortagePort.delete(productRefNo);
         }
     }
 

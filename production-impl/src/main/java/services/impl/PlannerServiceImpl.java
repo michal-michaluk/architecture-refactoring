@@ -246,7 +246,7 @@ public class PlannerServiceImpl implements PlannerService {
                     production.getForm().getRefNo(),
                     today, confShortagePredictionDaysAhead,
                     currentStock
-            );
+            ).getShortages();
             List<ShortageEntity> previous = shortageDao.getForProduct(production.getForm().getRefNo());
             if (!shortages.isEmpty() && !shortages.equals(previous)) {
                 notificationService.markOnPlan(shortages);

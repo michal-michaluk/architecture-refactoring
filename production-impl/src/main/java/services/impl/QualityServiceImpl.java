@@ -66,7 +66,7 @@ public class QualityServiceImpl implements QualityService {
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
                 currentStock
-        );
+        ).getShortages();
 
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
         if (!shortages.isEmpty() && !shortages.equals(previous)) {

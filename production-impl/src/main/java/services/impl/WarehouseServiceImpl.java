@@ -66,7 +66,7 @@ public class WarehouseServiceImpl implements WarehouseService {
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
                 currentStock
-        );
+        ).getShortages();
 
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
         if (shortages != null && !shortages.equals(previous)) {
