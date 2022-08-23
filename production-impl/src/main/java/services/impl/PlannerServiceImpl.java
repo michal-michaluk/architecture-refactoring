@@ -12,6 +12,8 @@ import entities.ProductionEntity;
 import entities.ShortageEntity;
 import external.JiraService;
 import external.NotificationsService;
+import infrastructure.ShortageTranslation;
+import shortages.ShortageFinder;
 import shortages.WarehouseStock;
 import tools.Util;
 import warehouse.StockPort;
@@ -242,11 +244,11 @@ public class PlannerServiceImpl implements PlannerService {
 
         for (ProductionEntity production : products) {
             WarehouseStock currentStock = stockPort.getStock(production.getForm().getRefNo());
-            List<ShortageEntity> shortages = shortageFinder.findShortages(
+            List<ShortageEntity> shortages = ShortageTranslation.toEntities(shortageFinder.findShortages(
                     production.getForm().getRefNo(),
                     today, confShortagePredictionDaysAhead,
                     currentStock
-            ).getShortages();
+            ));
             List<ShortageEntity> previous = shortageDao.getForProduct(production.getForm().getRefNo());
             if (!shortages.isEmpty() && !shortages.equals(previous)) {
                 notificationService.markOnPlan(shortages);

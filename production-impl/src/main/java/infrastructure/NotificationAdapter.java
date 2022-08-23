@@ -1,7 +1,7 @@
 package infrastructure;
 
 import external.NotificationsService;
-import services.impl.NotificationPort;
+import shortages.NotificationPort;
 import shortages.Shortage;
 
 public class NotificationAdapter implements NotificationPort {
@@ -10,16 +10,16 @@ public class NotificationAdapter implements NotificationPort {
 
     @Override
     public void alertPlanner(Shortage shortages) {
-        service.alertPlanner(shortages.getShortages());
+        service.alertPlanner(ShortageTranslation.toEntities(shortages));
     }
 
     @Override
     public void softNotifyPlanner(Shortage shortages) {
-        service.softNotifyPlanner(shortages.getShortages());
+        service.softNotifyPlanner(ShortageTranslation.toEntities(shortages));
     }
 
     @Override
     public void markOnPlan(Shortage shortages) {
-        service.markOnPlan(shortages.getShortages());
+        service.markOnPlan(ShortageTranslation.toEntities(shortages));
     }
 }

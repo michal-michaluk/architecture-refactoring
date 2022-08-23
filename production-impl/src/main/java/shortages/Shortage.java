@@ -1,17 +1,16 @@
 package shortages;
 
-import entities.ShortageEntity;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class Shortage {
 
     private final String productRefNo;
-    private final List<ShortageEntity> shortages;
+    private final List<DailyShortage> shortages;
 
-    public Shortage(String productRefNo, List<ShortageEntity> shortages) {
+    public Shortage(String productRefNo, List<DailyShortage> shortages) {
         this.productRefNo = productRefNo;
         this.shortages = shortages;
     }
@@ -20,13 +19,13 @@ public class Shortage {
         return new Shortage(productRefNo, new ArrayList<>());
     }
 
-    public void add(LocalDate day, long levelOnDelivery) {
-        ShortageEntity entity = new ShortageEntity();
-        entity.setRefNo(productRefNo);
-        entity.setFound(LocalDate.now());
-        entity.setAtDay(day);
-        entity.setMissing(-levelOnDelivery);
-        shortages.add(entity);
+    public void add(LocalDate day, long missing) {
+        shortages.add(new DailyShortage(
+                productRefNo,
+                LocalDate.now(),
+                day,
+                Math.abs(missing)
+        ));
     }
 
     public boolean isEmpty() {
@@ -38,10 +37,21 @@ public class Shortage {
     }
 
     public boolean firstBefore(LocalDate date) {
-        return shortages.get(0).getAtDay().isBefore(date);
+        return shortages.get(0).isBefore(date);
     }
 
-    public List<ShortageEntity> getShortages() {
-        return shortages;
+    public <T> List<T> mapEach(Function<DailyShortage, T> mapper) {
+        return shortages.stream().map(mapper).toList();
+    }
+
+    public record DailyShortage(
+            String refNo,
+            LocalDate found,
+            LocalDate atDay,
+            long missing
+    ) {
+        boolean isBefore(LocalDate date) {
+            return atDay.isBefore(date);
+        }
     }
 }

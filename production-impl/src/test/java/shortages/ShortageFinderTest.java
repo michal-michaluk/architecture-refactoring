@@ -1,4 +1,4 @@
-package services.impl;
+package shortages;
 
 import dao.DemandDao;
 import dao.ProductionDao;
@@ -6,10 +6,10 @@ import entities.*;
 import enums.DeliverySchema;
 import infrastructure.DemandsAdapter;
 import infrastructure.ProductionAdapter;
+import infrastructure.ShortageTranslation;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import shortages.WarehouseStock;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -51,11 +51,11 @@ public class ShortageFinderTest {
 
         WarehouseStock stock = new WarehouseStock(1000, 200);
         print(stock);
-        List<ShortageEntity> shortages = subject.findShortages(
+        List<ShortageEntity> shortages = ShortageTranslation.toEntities(subject.findShortages(
                 productRefNo,
                 date.plusDays(1), 7,
                 stock
-        ).getShortages();
+        ));
         print(shortages);
         Assert.assertEquals(2, shortages.size());
         Assert.assertEquals(date.plusDays(2), shortages.get(0).getAtDay());

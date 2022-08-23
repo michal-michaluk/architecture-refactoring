@@ -1,6 +1,4 @@
-package services.impl;
-
-import shortages.Shortage;
+package shortages;
 
 public interface NotificationPort {
     void alertPlanner(Shortage shortages);

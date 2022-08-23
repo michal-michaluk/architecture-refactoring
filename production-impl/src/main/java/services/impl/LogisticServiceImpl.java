@@ -6,11 +6,7 @@ import api.StockForecastDto;
 import dao.DemandDao;
 import entities.DemandEntity;
 import entities.ManualAdjustmentEntity;
-import external.JiraService;
-import shortages.Shortage;
-import shortages.ShortagePort;
-import shortages.WarehouseStock;
-import warehouse.StockPort;
+import shortages.ShortagesService;
 
 import java.time.Clock;
 import java.time.LocalDate;
@@ -19,17 +15,9 @@ import java.util.LinkedList;
 public class LogisticServiceImpl implements LogisticService {
 
     //Inject all
+    private ShortagesService shortagesService;
     private DemandDao demandDao;
-    private ShortagePort shortagePort;
-    private StockPort stockPort;
-    private ShortageFinder shortageFinder;
-
-    private NotificationPort notificationPort;
-    private JiraService jiraService;
     private Clock clock;
-
-    private int confShortagePredictionDaysAhead;
-    private long confIncreaseQATaskPriorityInDays;
 
     /**
      * <pre>
@@ -69,28 +57,8 @@ public class LogisticServiceImpl implements LogisticService {
         // TODO REFACTOR: introduce domain event DemandManuallyAdjusted
 
         String productRefNo = adjustment.getProductRefNo();
-        LocalDate today = LocalDate.now(clock);
-        WarehouseStock stock = stockPort.getStock(productRefNo);
 
-        Shortage shortages = shortageFinder.findShortages(
-                productRefNo,
-                today, confShortagePredictionDaysAhead,
-                stock
-        );
-        Shortage previous = shortagePort.get(productRefNo);
-        // TODO REFACTOR: lookup for shortages -> ShortageFound / ShortagesGone
-        if (shortages.isDifferentThan(previous)) {
-            notificationPort.alertPlanner(shortages);
-            // TODO REFACTOR: policy why to increase task priority
-            if (stock.locked() > 0 &&
-                    shortages.firstBefore(today.plusDays(confIncreaseQATaskPriorityInDays))) {
-                jiraService.increasePriorityFor(productRefNo);
-            }
-            shortagePort.save(shortages);
-        }
-        if (shortages.isEmpty() && !previous.isEmpty()) {
-            shortagePort.delete(productRefNo);
-        }
+        shortagesService.findShortages(productRefNo);
     }
 
     /**

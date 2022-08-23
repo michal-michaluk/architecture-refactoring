@@ -14,16 +14,18 @@ public class ShortageAdapter implements ShortagePort {
 
     @Override
     public Shortage get(String productRefNo) {
-        return new Shortage(productRefNo, shortageDao.getForProduct(productRefNo));
+        return ShortageTranslation.fromEntities(productRefNo, shortageDao.getForProduct(productRefNo));
     }
 
     @Override
     public void save(Shortage shortages) {
-        shortageDao.save(shortages.getShortages());
+        shortageDao.save(ShortageTranslation.toEntities(shortages));
     }
 
     @Override
     public void delete(String productRefNo) {
         shortageDao.delete(productRefNo);
     }
+
+
 }

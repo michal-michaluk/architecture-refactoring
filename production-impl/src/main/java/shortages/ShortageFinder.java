@@ -1,6 +1,4 @@
-package services.impl;
-
-import shortages.*;
+package shortages;
 
 import java.time.LocalDate;
 

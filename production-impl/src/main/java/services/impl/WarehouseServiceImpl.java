@@ -7,6 +7,8 @@ import dao.ShortageDao;
 import entities.ShortageEntity;
 import external.JiraService;
 import external.NotificationsService;
+import infrastructure.ShortageTranslation;
+import shortages.ShortageFinder;
 import shortages.WarehouseStock;
 import warehouse.StockPort;
 
@@ -62,11 +64,11 @@ public class WarehouseServiceImpl implements WarehouseService {
     public void processShortages(String productRefNo) {
         LocalDate today = LocalDate.now(clock);
         WarehouseStock currentStock = stockPort.getStock(productRefNo);
-        List<ShortageEntity> shortages = shortageFinder.findShortages(
+        List<ShortageEntity> shortages = ShortageTranslation.toEntities(shortageFinder.findShortages(
                 productRefNo,
                 today, confShortagePredictionDaysAhead,
                 currentStock
-        ).getShortages();
+        ));
 
         List<ShortageEntity> previous = shortageDao.getForProduct(productRefNo);
         if (shortages != null && !shortages.equals(previous)) {
