@@ -1,12 +1,14 @@
 package infrastructure;
 
 import dao.DemandDao;
-import entities.DemandEntity;
+import demands.DemandEntity;
+import enums.DeliverySchema;
 import shortages.DemandPort;
 import shortages.Demands;
-import tools.Util;
+import shortages.LevelOnDeliveryCalculation;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DemandsAdapter implements DemandPort {
@@ -23,9 +25,17 @@ public class DemandsAdapter implements DemandPort {
                 .collect(Collectors.toMap(
                         DemandEntity::getDay,
                         demand -> new Demands.DailyDemand(
-                                Util.getLevel(demand),
-                                Util.getDeliverySchema(demand)
+                                demand.getLevel(),
+                                toStrategy(demand.getDeliverySchema())
                         )
                 )));
+    }
+
+
+    private static LevelOnDeliveryCalculation toStrategy(DeliverySchema schema) {
+        return Map.of(
+                DeliverySchema.atDayStart, LevelOnDeliveryCalculation.atDayStart,
+                DeliverySchema.tillEndOfDay, LevelOnDeliveryCalculation.tillEndOfDay
+        ).getOrDefault(schema, LevelOnDeliveryCalculation.error);
     }
 }

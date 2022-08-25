@@ -2,6 +2,7 @@ package shortages;
 
 import dao.DemandDao;
 import dao.ProductionDao;
+import demands.DemandEntity;
 import entities.*;
 import enums.DeliverySchema;
 import infrastructure.DemandsAdapter;

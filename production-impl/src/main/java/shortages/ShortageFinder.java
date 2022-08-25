@@ -36,25 +36,10 @@ public class ShortageFinder {
         ProductionOutputs outputs = productionPort.get(productRefNo, today.atStartOfDay());
         Demands demandsPerDay = demandsPort.get(productRefNo, today);
 
-        long level = stock.level();
+        ShortageForecast object = new ShortageForecast(productRefNo, dates, outputs, demandsPerDay, stock);
 
-        Shortage shortage = Shortage.empty(productRefNo);
-        for (LocalDate day : dates) {
-            if (!demandsPerDay.hasDemandsFor(day)) {
-                level += outputs.getOutputs(day);
-                continue;
-            }
-            long produced = outputs.getOutputs(day);
+        Shortage shortage = object.predictShortages();
 
-            Demands.DailyDemand demand = demandsPerDay.getDemand(day);
-            long levelOnDelivery = demand.calculateLevelOnDelivery(level, produced);
-
-            if (levelOnDelivery < 0) {
-                shortage.add(day, levelOnDelivery);
-            }
-            long endOfDayLevel = level + produced - demand.getLevel();
-            level = endOfDayLevel >= 0 ? endOfDayLevel : 0;
-        }
         return shortage;
     }
 }

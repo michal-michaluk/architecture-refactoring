@@ -4,7 +4,7 @@ import api.AdjustDemandDto;
 import api.LogisticService;
 import api.StockForecastDto;
 import dao.DemandDao;
-import entities.DemandEntity;
+import demands.DemandEntity;
 import entities.ManualAdjustmentEntity;
 import shortages.ShortagesService;
 

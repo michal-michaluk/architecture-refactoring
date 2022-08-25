@@ -1,4 +1,8 @@
-package entities;
+package demands;
+
+import entities.ManualAdjustmentEntity;
+import entities.OriginalDemandEntity;
+import enums.DeliverySchema;
 
 import java.time.LocalDate;
 import java.util.LinkedList;
@@ -118,7 +122,27 @@ public class DemandEntity {
     }
 
     public String toString() {
-        return "entities.DemandEntity(id=" + this.getId() + ", callofDate=" + this.getCallofDate() + ", productRefNo=" + this.getProductRefNo() + ", atDay=" + this.getDay() + ", original=" + this.getOriginal() + ", adjustment=" + this.getAdjustment() + ")";
+        return "demands.DemandEntity(id=" + this.getId() + ", callofDate=" + this.getCallofDate() + ", productRefNo=" + this.getProductRefNo() + ", atDay=" + this.getDay() + ", original=" + this.getOriginal() + ", adjustment=" + this.getAdjustment() + ")";
     }
 
+    public DeliverySchema getDeliverySchema() {
+        DeliverySchema deliverySchema;
+        if (adjustment.isEmpty()) {
+            deliverySchema = original.getDeliverySchema();
+        } else {
+            deliverySchema = adjustment.get(adjustment.size() - 1).getDeliverySchema();
+        }
+        if (deliverySchema == null) {
+            return DefaultDeliverySchemaPolicy.defaultFor(productRefNo);
+        }
+        return deliverySchema;
+    }
+
+    public long getLevel() {
+        if (adjustment.isEmpty()) {
+            return original.getLevel();
+        } else {
+            return adjustment.get(adjustment.size() - 1).getLevel();
+        }
+    }
 }
